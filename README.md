@@ -1,11 +1,13 @@
 ## Repozytorium do projektu z Systemów Mobilnych
 
 ### Skład zespołu projektowego:
+
 - Szymon Ciosek
 - Wojciech Michaluk
 - Jakub Sadkiewicz
 
 ### Opis pomysłu
+
 Nasz pomysł na aplikację w ramach projektu to _Budzik z mini-łamigłówką/zagadką do rozwiązania_.
 Założeniem jest to, żeby użytkownik musiał wykonać jakieś proste zadanie, polegające na mini-grze
 (co powinno trwać kilkanaście do kilkudziesięciu sekund), aby móc wyłączyć alarm.
@@ -22,6 +24,10 @@ Rozwój aplikacji będzie polegać głównie na dodawaniu nowych zadań, aby zwi
 zagadek i dzięki temu zmniejszyć ich powtarzalność.
 
 ### Aspekty technologiczne
+
+Planujemy napisać aplikację z użyciem technologii wieloplatformowych, m.in. Flutter/React Native.
+Dzięki temu zachowujemy elastyczność co do platformy docelowej dla aplikacji, ponieważ wymienione
+technologie oferują pełne wsparcie zarówno dla Androida, jak i dla iOS-a.
 
 ### Postępy prac
 
