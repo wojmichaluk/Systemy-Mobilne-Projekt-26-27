@@ -32,4 +32,4 @@ technologie oferują pełne wsparcie zarówno dla Androida, jak i dla iOS-a.
 ### Postępy prac
 
 Postępy prac (w formie krótkich raportów) będą się pojawiały regularnie w aktualizowanym 
-[pliku z opisem postępów](./project_progress.md)
+[pliku z opisem postępów](./project_progress.md).
