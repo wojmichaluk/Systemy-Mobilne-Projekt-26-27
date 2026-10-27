@@ -11,3 +11,11 @@ Po dokładniejszym zbadaniu sytuacji, z powodu spodziewanych problemów z integr
 z API systemu USOS, zdecydowaliśmy się na tę drugą opcję.
 Uzgodniliśmy ten pomysł z Prowadzącym na zajęciach i po jego zaakceptowaniu
 założyliśmy to repozytorium, w którym będziemy rozwijać aplikację.
+
+#### Tydzień 19.10 - 25.10
+
+W tym tygodniu zapoznawaliśmy się z wybranymi technologiami, które będziemy
+wykorzystywać w pisaniu aplikacji.
+Planujemy w najbliższym czasie utworzyć projekt we wstępnej postaci oraz dodać
+funkcjonalność budzika (na razie "zwykłego"), później stopniowo dodając
+usprawnienia.
