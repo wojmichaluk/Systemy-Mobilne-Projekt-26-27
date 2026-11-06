@@ -19,3 +19,19 @@ wykorzystywać w pisaniu aplikacji.
 Planujemy w najbliższym czasie utworzyć projekt we wstępnej postaci oraz dodać
 funkcjonalność budzika (na razie "zwykłego"), później stopniowo dodając
 usprawnienia.
+
+#### Tydzień 26.10 - 01.11
+
+W tym tygodniu stworzyliśmy projekt aplikacji z wykorzystaniem infrastruktury
+[Expo](https://expo.dev/).
+Program we wstępnej postaci obsługuje podstawowe funkcjonalności budzika.
+Pokazuje on aktualną godzinę, pozwala dostosować dokładną godzinę i minutę
+alarmu, a kiedy ten czas nadchodzi, wysyła powiadomienie i pozwala wyłączyć
+budzik.
+
+#### Tydzień 02.11 - 08.11
+
+W tym tygodniu planowaliśmy, jakie mini-gry dodać do aplikacji.
+Zamierzamy w najbliższym czasie stopniowo rozwijać projekt, dodając
+kolejne mini-gry do programu i losując jedną z nich, której
+ukończenie jest konieczne, aby wyłączyć ustawiony budzik.
