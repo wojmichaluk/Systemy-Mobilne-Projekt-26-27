@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Vibration, View } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, Vibration, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { getRandomMinigame, MinigameComponent } from '@/components/minigames/registry';
 import { Fonts, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -115,6 +116,7 @@ export function AlarmClock() {
   const [ringing, setRinging] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [ActiveMinigame, setActiveMinigame] = useState<MinigameComponent | null>(null);
   const notificationId = useRef<string | null>(null);
   const request = useRef(0);
 
@@ -174,11 +176,16 @@ export function AlarmClock() {
 
   async function disarm() {
     request.current += 1;
+    setActiveMinigame(null);
     setArmed(false);
     setTarget(null);
     setRinging(false);
     setNotice(null);
     await clearNotification();
+  }
+
+  function handleMinigameSuccess() {
+    void disarm();
   }
 
   function changeHour(delta: number) {
@@ -287,11 +294,22 @@ export function AlarmClock() {
           <ThemedText type="subtitle" style={styles.ringingBody}>
             Pora wstawać
           </ThemedText>
-          <Pressable accessibilityRole="button" onPress={() => void disarm()} style={styles.stopButton}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setActiveMinigame(() => getRandomMinigame())}
+            style={styles.stopButton}>
             <ThemedText style={styles.stopLabel}>Wyłącz</ThemedText>
           </Pressable>
         </View>
       ) : null}
+
+      <Modal
+        visible={ActiveMinigame !== null}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => {}}>
+        {ActiveMinigame ? <ActiveMinigame onSuccess={handleMinigameSuccess} /> : null}
+      </Modal>
     </ThemedView>
   );
 }
