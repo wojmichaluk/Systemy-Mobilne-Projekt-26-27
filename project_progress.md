@@ -35,3 +35,12 @@ W tym tygodniu planowaliśmy, jakie mini-gry dodać do aplikacji.
 Zamierzamy w najbliższym czasie stopniowo rozwijać projekt, dodając
 kolejne mini-gry do programu i losując jedną z nich, której
 ukończenie jest konieczne, aby wyłączyć ustawiony budzik.
+
+#### Tydzień 09.11 - 15.11
+
+W tym tygodniu dodaliśmy pierwszą minigrę do aplikacji: **Sudoku**
+(w uproszczonej wersji 4x4 - 4 kwadraty o wymiarach 2x2, uzupełniane
+cyframi od 1 do 4, na zasadach zwykłego Sudoku).
+Na razie plansza początkowa nie jest generowana, tylko sztywno wpisana
+w kodzie, ale pozostałe elementy logiki gry i styl są ukończone.
+Następnym krokiem będzie uogólnione generowanie losowej planszy.
