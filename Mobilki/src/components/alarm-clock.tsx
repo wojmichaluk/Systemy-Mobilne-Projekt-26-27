@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Vibration, View } from 'react-native';
+import { AppState, Platform, Pressable, ScrollView, StyleSheet, Vibration, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AlarmDismissGame } from '@/components/alarm-dismiss-game';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Fonts, Spacing } from '@/constants/theme';
@@ -43,6 +44,13 @@ function defaultAlarm() {
 
 type Subscription = { remove: () => void };
 
+function isAlarmNotification(notification: { request: { content: { data?: unknown } } }) {
+  const data = notification.request.content.data;
+  if (!data || typeof data !== 'object') return false;
+  const alarm = (data as { alarm?: unknown }).alarm;
+  return alarm === true || alarm === 'true';
+}
+
 async function prepareNotifications() {
   const Notifications = await import('expo-notifications');
   Notifications.setNotificationHandler({
@@ -81,21 +89,28 @@ async function scheduleAlarmNotification(date: Date) {
     };
   }
 
-  const id = await Notifications.scheduleNotificationAsync({
-    content: {
-      title: 'Budzik',
-      body: 'Pora wstawać',
-      sound: true,
-      data: { alarm: true },
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DATE,
-      date,
-      channelId: ALARM_CHANNEL,
-    },
-  });
-
-  return { id, warning: null as string | null };
+  try {
+    const id = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Budzik',
+        body: 'Pora wstawać',
+        sound: true,
+        data: { alarm: true },
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date,
+        channelId: ALARM_CHANNEL,
+      },
+    });
+    return { id, warning: null as string | null };
+  } catch (error) {
+    if (Platform.OS !== 'web') throw error;
+    return {
+      id: null,
+      warning: 'W przeglądarce budzik działa tylko przy otwartej karcie.',
+    };
+  }
 }
 
 async function cancelAlarmNotification(id: string | null) {
@@ -115,8 +130,11 @@ export function AlarmClock() {
   const [ringing, setRinging] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [practice, setPractice] = useState(false);
   const notificationId = useRef<string | null>(null);
   const request = useRef(0);
+  const armedRef = useRef(false);
+  const targetRef = useRef<Date | null>(null);
 
   useEffect(() => {
     const start = new Date();
@@ -129,21 +147,43 @@ export function AlarmClock() {
   }, []);
 
   useEffect(() => {
-    let subscription: Subscription | undefined;
+    let received: Subscription | undefined;
+    let response: Subscription | undefined;
     let active = true;
 
     prepareNotifications().then((Notifications) => {
       if (!Notifications || !active) return;
-      subscription = Notifications.addNotificationReceivedListener((notification) => {
-        if (notification.request.content.data?.alarm === true) {
-          setRinging(true);
-        }
+
+      const openGame = (notification: { request: { content: { data?: unknown } } }) => {
+        if (isAlarmNotification(notification)) setRinging(true);
+      };
+
+      received = Notifications.addNotificationReceivedListener(openGame);
+      response = Notifications.addNotificationResponseReceivedListener((event) => {
+        openGame(event.notification);
       });
+
+      const last = Notifications.getLastNotificationResponse();
+      if (last && isAlarmNotification(last.notification)) {
+        const stamp = last.notification.date;
+        const firedAt = stamp > 10_000_000_000 ? stamp : stamp * 1000;
+        if (Date.now() - firedAt < 2 * 60 * 1000) setRinging(true);
+        Notifications.clearLastNotificationResponse();
+      }
+    });
+
+    const appState = AppState.addEventListener('change', (next) => {
+      const due = targetRef.current;
+      if (next === 'active' && armedRef.current && due && Date.now() >= due.getTime()) {
+        setRinging(true);
+      }
     });
 
     return () => {
       active = false;
-      subscription?.remove();
+      received?.remove();
+      response?.remove();
+      appState.remove();
     };
   }, []);
 
@@ -155,6 +195,7 @@ export function AlarmClock() {
   }, [armed, now, ringing, target]);
 
   useEffect(() => {
+    if (!ringing || Platform.OS === 'web') return;
     const pulse = () => {
       Vibration.vibrate(Platform.OS === 'android' ? [0, 700, 400, 700] : 700);
     };
@@ -174,11 +215,20 @@ export function AlarmClock() {
 
   async function disarm() {
     request.current += 1;
+    armedRef.current = false;
+    targetRef.current = null;
     setArmed(false);
     setTarget(null);
     setRinging(false);
     setNotice(null);
     await clearNotification();
+    try {
+      const Notifications = await import('expo-notifications');
+      Notifications.clearLastNotificationResponse();
+      await Notifications.dismissAllNotificationsAsync();
+    } catch {
+      // Na webie systemowe powiadomienia nie zawsze dają się zamknąć.
+    }
   }
 
   function changeHour(delta: number) {
@@ -203,9 +253,11 @@ export function AlarmClock() {
         return;
       }
       notificationId.current = result.id;
+      targetRef.current = next;
+      armedRef.current = true;
       setTarget(next);
       setArmed(true);
-      setRinging(false);
+      setRinging(Date.now() >= next.getTime());
       setNotice(result.warning);
     } catch {
       if (token !== request.current) return;
@@ -276,21 +328,26 @@ export function AlarmClock() {
             {armed ? 'Anuluj' : saving ? 'Ustawiam…' : 'Ustaw budzik'}
           </ThemedText>
         </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => setPractice(true)}
+          style={({ pressed }) => [
+            styles.testButton,
+            { backgroundColor: theme.backgroundElement, opacity: pressed ? 0.7 : 1 },
+          ]}>
+          <ThemedText>Wypróbuj grę</ThemedText>
+        </Pressable>
         </ScrollView>
       </SafeAreaView>
 
-      {ringing ? (
-        <View style={styles.ringing}>
-          <ThemedText type="title" style={styles.ringingTitle}>
-            Budzik
-          </ThemedText>
-          <ThemedText type="subtitle" style={styles.ringingBody}>
-            Pora wstawać
-          </ThemedText>
-          <Pressable accessibilityRole="button" onPress={() => void disarm()} style={styles.stopButton}>
-            <ThemedText style={styles.stopLabel}>Wyłącz</ThemedText>
-          </Pressable>
-        </View>
+      {ringing || practice ? (
+        <AlarmDismissGame
+          onClose={ringing ? undefined : () => setPractice(false)}
+          onComplete={() => {
+            setPractice(false);
+            if (ringing) void disarm();
+          }}
+        />
       ) : null}
     </ThemedView>
   );
@@ -394,31 +451,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: Spacing.three,
   },
-  ringing: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    backgroundColor: '#111827',
+  testButton: {
+    alignSelf: 'stretch',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.four,
-    padding: Spacing.four,
-  },
-  ringingTitle: {
-    color: '#ffffff',
-  },
-  ringingBody: {
-    color: '#ffffff',
-  },
-  stopButton: {
-    backgroundColor: '#ffffff',
     borderRadius: 16,
-    paddingHorizontal: Spacing.five,
     paddingVertical: Spacing.three,
-  },
-  stopLabel: {
-    color: '#111827',
   },
 });
