@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { AppState, Platform, Pressable, ScrollView, StyleSheet, Vibration, View } from 'react-native';
+import { AppState, Modal, Platform, Pressable, ScrollView, StyleSheet, Vibration, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AlarmDismissGame } from '@/components/alarm-dismiss-game';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { getRandomMinigame, MinigameComponent } from '@/components/minigames/registry';
 import { Fonts, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -130,7 +130,7 @@ export function AlarmClock() {
   const [ringing, setRinging] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [practice, setPractice] = useState(false);
+  const [ActiveMinigame, setActiveMinigame] = useState<MinigameComponent | null>(null);
   const notificationId = useRef<string | null>(null);
   const request = useRef(0);
   const armedRef = useRef(false);
@@ -217,6 +217,7 @@ export function AlarmClock() {
     request.current += 1;
     armedRef.current = false;
     targetRef.current = null;
+    setActiveMinigame(null);
     setArmed(false);
     setTarget(null);
     setRinging(false);
@@ -229,6 +230,15 @@ export function AlarmClock() {
     } catch {
       // Na webie systemowe powiadomienia nie zawsze dają się zamknąć.
     }
+  }
+
+  function openRandomMinigame() {
+    setActiveMinigame(() => getRandomMinigame());
+  }
+
+  function handleMinigameSuccess() {
+    setActiveMinigame(null);
+    if (ringing) void disarm();
   }
 
   function changeHour(delta: number) {
@@ -330,7 +340,7 @@ export function AlarmClock() {
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          onPress={() => setPractice(true)}
+          onPress={openRandomMinigame}
           style={({ pressed }) => [
             styles.testButton,
             { backgroundColor: theme.backgroundElement, opacity: pressed ? 0.7 : 1 },
@@ -340,15 +350,46 @@ export function AlarmClock() {
         </ScrollView>
       </SafeAreaView>
 
-      {ringing || practice ? (
-        <AlarmDismissGame
-          onClose={ringing ? undefined : () => setPractice(false)}
-          onComplete={() => {
-            setPractice(false);
-            if (ringing) void disarm();
-          }}
-        />
+      {ringing ? (
+        <View style={styles.ringing}>
+          <ThemedText type="title" style={styles.ringingTitle}>
+            Budzik
+          </ThemedText>
+          <ThemedText type="subtitle" style={styles.ringingBody}>
+            Pora wstawać
+          </ThemedText>
+          <Pressable
+            accessibilityRole="button"
+            onPress={openRandomMinigame}
+            style={styles.stopButton}>
+            <ThemedText style={styles.stopLabel}>Wyłącz</ThemedText>
+          </Pressable>
+        </View>
       ) : null}
+
+      <Modal
+        visible={ActiveMinigame !== null}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => {
+          if (!ringing) setActiveMinigame(null);
+        }}>
+        {ActiveMinigame ? (
+          <View style={styles.minigame}>
+            <ActiveMinigame onSuccess={handleMinigameSuccess} />
+            {!ringing ? (
+              <SafeAreaView pointerEvents="box-none" style={styles.closeTestWrap}>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => setActiveMinigame(null)}
+                  style={styles.closeTest}>
+                  <ThemedText type="small">Zamknij test</ThemedText>
+                </Pressable>
+              </SafeAreaView>
+            ) : null}
+          </View>
+        ) : null}
+      </Modal>
     </ThemedView>
   );
 }
@@ -456,5 +497,47 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 16,
     paddingVertical: Spacing.three,
+  },
+  ringing: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: '#111827',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.four,
+    padding: Spacing.four,
+  },
+  ringingTitle: {
+    color: '#ffffff',
+  },
+  ringingBody: {
+    color: '#ffffff',
+  },
+  stopButton: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    paddingHorizontal: Spacing.five,
+    paddingVertical: Spacing.three,
+  },
+  stopLabel: {
+    color: '#111827',
+  },
+  minigame: {
+    flex: 1,
+  },
+  closeTestWrap: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    left: 0,
+    alignItems: 'flex-end',
+    paddingHorizontal: Spacing.four,
+  },
+  closeTest: {
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
   },
 });

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { LayoutChangeEvent, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { LayoutChangeEvent, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   cancelAnimation,
@@ -14,6 +14,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { MinigameProps } from '@/components/minigames/registry';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 
@@ -33,45 +34,30 @@ const COLORS = [
   { name: 'Czerwony', color: '#e5484d' },
 ] as const;
 
-type AlarmDismissGameProps = {
-  onComplete: () => void;
-  onClose?: () => void;
-};
-
-export function AlarmDismissGame({ onComplete, onClose }: AlarmDismissGameProps) {
+export function AlarmDismissGame({ onSuccess }: MinigameProps) {
   const [step, setStep] = useState(0);
 
   return (
-    <Modal animationType="fade" statusBarTranslucent visible>
-      <SafeAreaView style={styles.overlay}>
-        <ThemedText type="title" style={styles.title}>
-          {onClose ? 'Próba' : 'Pora wstawać'}
-        </ThemedText>
-        <ThemedText type="small" style={styles.stepLabel}>
-          Krok {step + 1} z {STEPS.length}
-        </ThemedText>
-        <View style={styles.dots}>
-          {STEPS.map((_, index) => (
-            <View key={index} style={[styles.dot, index <= step && styles.dotOn]} />
-          ))}
-        </View>
-        <ThemedText type="small" style={styles.hint}>
-          {STEPS[step]}
-        </ThemedText>
+    <SafeAreaView style={styles.overlay}>
+      <ThemedText type="title" style={styles.title}>
+        Pora wstawać
+      </ThemedText>
+      <ThemedText type="small" style={styles.stepLabel}>
+        Krok {step + 1} z {STEPS.length}
+      </ThemedText>
+      <View style={styles.dots}>
+        {STEPS.map((_, index) => (
+          <View key={index} style={[styles.dot, index <= step && styles.dotOn]} />
+        ))}
+      </View>
+      <ThemedText type="small" style={styles.hint}>
+        {STEPS[step]}
+      </ThemedText>
 
-        {step === 0 ? <CatchStage onDone={() => setStep(1)} /> : null}
-        {step === 1 ? <HoldStage onDone={() => setStep(2)} /> : null}
-        {step === 2 ? <SequenceStage onDone={onComplete} /> : null}
-
-        {onClose ? (
-          <Pressable accessibilityRole="button" onPress={onClose} style={styles.closeButton}>
-            <ThemedText type="small" style={styles.closeLabel}>
-              Zamknij test
-            </ThemedText>
-          </Pressable>
-        ) : null}
-      </SafeAreaView>
-    </Modal>
+      {step === 0 ? <CatchStage onDone={() => setStep(1)} /> : null}
+      {step === 1 ? <HoldStage onDone={() => setStep(2)} /> : null}
+      {step === 2 ? <SequenceStage onDone={onSuccess} /> : null}
+    </SafeAreaView>
   );
 }
 
@@ -482,12 +468,5 @@ const styles = StyleSheet.create({
   colorLabel: {
     color: '#e2e8f0',
     textAlign: 'center',
-  },
-  closeButton: {
-    alignItems: 'center',
-    paddingVertical: Spacing.three,
-  },
-  closeLabel: {
-    color: '#94a3b8',
   },
 });
