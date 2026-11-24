@@ -44,3 +44,13 @@ cyframi od 1 do 4, na zasadach zwykłego Sudoku).
 Na razie plansza początkowa nie jest generowana, tylko sztywno wpisana
 w kodzie, ale pozostałe elementy logiki gry i styl są ukończone.
 Następnym krokiem będzie uogólnione generowanie losowej planszy.
+
+#### Tydzień 16.11 - 22.11
+
+W tym tygodniu dodaliśmy kolejną grę do aplikacji - sekwencja
+prostych aktywności, w 3 krokach: złapanie ruszającego się kółka,
+przytrzymanie przycisku oraz odtworzenie kolejności migania elementów
+(_Simon Says_).
+Połączyliśmy zmiany wynikające z dodania obu gier i przygotowaliśmy
+ogólny szkielet aplikacji, który pozwala w łatwy sposób dodawać
+kolejne minigry.
